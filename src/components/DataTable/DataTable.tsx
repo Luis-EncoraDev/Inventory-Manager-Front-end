@@ -1,23 +1,7 @@
 import React from 'react';
 import "../DataTable/DataTable.css";
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import {Paper, Button} from '@mui/material';
-
-const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 50, headerAlign: 'center', align: 'center'},
-  { field: 'name', headerName: 'Name', width: 250, headerAlign: 'center', align: 'center'},
-  { field: 'category', headerName: 'Category', width: 130, headerAlign: 'center', align: 'center' },
-  { field: 'unitPrice', headerName: 'Unit price', width: 130, headerAlign: 'center', align: 'center' },
-  { field: 'stockQuantity', headerName: 'Stock quantity', width: 160, headerAlign: 'center', align: 'center' },
-  { field: 'expirationDate', headerName: 'Expiration date', width: 150, headerAlign: 'center', align: 'center' },
-  { field: 'Actions', width: 180, sortable: false, renderCell: () => (
-    <div>
-      <button className='editButton'>Edit</button>
-      <button className='deleteButton'>Delete</button>
-    </div>
-  ), headerAlign: 'center', align: 'center'}
-];
-
+import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
+import { Paper, Box } from '@mui/material';
 
 const rows = [
   {
@@ -26,7 +10,7 @@ const rows = [
     category: "Produce",
     unitPrice: 1.99,
     expirationDate: "2025-05-23",
-    stockQuantity: 500,
+    stockQuantity: 1,
   },
   {
     id: 2,
@@ -34,7 +18,7 @@ const rows = [
     category: "Bakery",
     unitPrice: 3.50,
     expirationDate: "2025-05-19",
-    stockQuantity: 150,
+    stockQuantity: 4,
   },
   {
     id: 3,
@@ -42,7 +26,7 @@ const rows = [
     category: "Dairy & Cheese",
     unitPrice: 6.75,
     expirationDate: "2025-06-10",
-    stockQuantity: 200,
+    stockQuantity: 8,
   },
   {
     id: 4,
@@ -50,7 +34,7 @@ const rows = [
     category: "Pantry",
     unitPrice: 8.99,
     expirationDate: "2026-01-15",
-    stockQuantity: 300,
+    stockQuantity: 20,
   },
   {
     id: 5,
@@ -74,13 +58,13 @@ const rows = [
     category: "Pantry",
     unitPrice: 1.79,
     expirationDate: "2026-03-20",
-    stockQuantity: 400,
+    stockQuantity: 16,
   },
   {
     id: 8,
     name: "Greek Yogurt (Plain)",
     category: "Dairy & Cheese",
-    unitPrice: 5.50,
+    unitPrice: 3,
     expirationDate: "2025-05-25",
     stockQuantity: 180,
   },
@@ -98,30 +82,72 @@ const rows = [
     category: "Pantry",
     unitPrice: 15.99,
     expirationDate: "2027-04-05",
-    stockQuantity: 120,
+    stockQuantity: 10,
   }
 ];
 
 const paginationModel = { page: 0, pageSize: 10 };
 
-export default function DataTable() {
+const DataTable = () => {
+  const getRowClassName = (params: any) => {
+    const expirationDate = new Date(params.row.expirationDate);
+    const today = new Date();
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    const twoWeeks = 2 * oneWeek;
+
+    if (!params.row.expirationDate) {
+      return '';
+    } else if (expirationDate.getTime() - today.getTime() < oneWeek) {
+      return 'expired-soon';
+    } else if (expirationDate.getTime() - today.getTime() < twoWeeks) {
+      return 'expires-within-two-weeks';
+    } else {
+      return 'expires-later';
+    }
+  };
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', width: 250, headerAlign: 'center', align: 'center'},
+    { field: 'category', headerName: 'Category', width: 130, headerAlign: 'center', align: 'center' },
+    { field: 'unitPrice', headerName: 'Unit price', width: 130, headerAlign: 'center', align: 'center' },
+    {
+      field: 'stockQuantity',
+      headerName: 'Stock',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: GridRenderCellParams) => {
+        let color = '';
+        if (params.value < 5) {
+          color = "#f44336";
+        } else if (params.value >= 5 && params.value <= 10) {
+          color = "#ff9800";
+        }
+
+        return <Box sx={{ background: color }}>{params.value}</Box>;
+      },
+    },
+    { field: 'expirationDate', headerName: 'Expiration date', width: 150, headerAlign: 'center', align: 'center' },
+    { field: 'Actions', width: 180, sortable: false, renderCell: () => (
+      <div>
+        <button className='editButton'>Edit</button>
+        <button className='deleteButton'>Delete</button>
+      </div>
+    ), headerAlign: 'center', align: 'center'}
+  ];
+
   return (
     <Paper sx={{ height: 630, width: 1050}}>
       <DataGrid
         rows={rows}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[5, 10]}
+        pageSizeOptions={[10]}
         sx={{ border: 0, width: '100%' }}
+        getRowClassName={getRowClassName}
       />
     </Paper>
   );
 }
-function handleEdit(row: any): void {
-  throw new Error('Function not implemented.');
-}
 
-function handleDelete(row: any): void {
-  throw new Error('Function not implemented.');
-}
-
+export default DataTable;
