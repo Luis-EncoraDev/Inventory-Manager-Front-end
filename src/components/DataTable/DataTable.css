@@ -1,0 +1,38 @@
+.editButton {
+    width: 4rem;
+    height: 2rem;
+    font-weight: bold;
+    border-width: 1.5px;
+    border-color: #023efa;
+    background-color: transparent;
+    color: #023efa;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-right: 1rem;
+    margin-top: 0.5rem;
+}
+
+.editButton:hover {
+    transition: background-color 0.3s ease;
+    background-color: #023efa;
+    color: white;
+}
+
+.deleteButton {
+    width: 4rem;
+    height: 2rem;
+    font-weight: bold;
+    border-width: 1.5px;
+    border-color: #fa0202;
+    background-color: transparent;
+    color: #fa0202;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-top: 0.5rem;
+}
+
+.deleteButton:hover {
+    transition: background-color 0.3s ease;
+    background-color: #fa0202;
+    color: white;
+}
