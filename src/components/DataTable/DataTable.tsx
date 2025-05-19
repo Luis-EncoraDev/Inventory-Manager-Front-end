@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import "../DataTable/DataTable.css";
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 import { Paper, Box } from '@mui/material';
+import axios from 'axios';
 
 const rows = [
   {
@@ -89,6 +90,9 @@ const rows = [
 const paginationModel = { page: 0, pageSize: 10 };
 
 const DataTable = () => {
+
+  const [products, setProducts] = useState([]);
+
   const getRowClassName = (params: any) => {
     const expirationDate = new Date(params.row.expirationDate);
     const today = new Date();
@@ -105,6 +109,19 @@ const DataTable = () => {
       return 'expires-later';
     }
   };
+
+useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get("http://localhost:9090/api/products");
+        setProducts(response.data);
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', width: 250, headerAlign: 'center', align: 'center'},
@@ -139,7 +156,7 @@ const DataTable = () => {
   return (
     <Paper sx={{ height: 630, width: 1050}}>
       <DataGrid
-        rows={rows}
+        rows={products}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}
         pageSizeOptions={[10]}
