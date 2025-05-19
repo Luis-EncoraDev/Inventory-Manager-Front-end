@@ -3,8 +3,8 @@
     height: 2rem;
     font-weight: bold;
     border-width: 1.5px;
-    border-color: #023efa;
-    background-color: #023efa;
+    border-color: #396bff;
+    background-color: #396bff;
     color: white;
     border-radius: 8px;
     transition: background-color 0.3s ease;
@@ -13,6 +13,7 @@
 }
 
 .editButton:hover {
+    cursor: pointer;
     transition: background-color 0.3s ease;
     transform: scale(1.1);
 }
@@ -22,8 +23,8 @@
     height: 2rem;
     font-weight: bold;
     border-width: 1.5px;
-    border-color: #fa0202;
-    background-color: #fa0202;
+    border-color: #ff3d3d;
+    background-color: #ff3d3d;
     color: white;
     border-radius: 8px;
     transition: background-color 0.3s ease;
@@ -31,12 +32,13 @@
 }
 
 .deleteButton:hover {
+    cursor: pointer;
     transition: background-color 0.3s ease;
     transform: scale(1.1);
 }
 
 .expired-soon {
-  background-color: #ffb2b2;
+  background-color: #ffdcdc;
 }
 
 .expires-within-two-weeks {
