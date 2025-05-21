@@ -1,0 +1,50 @@
+.editButton {
+    width: 4rem;
+    height: 2rem;
+    font-weight: bold;
+    border-width: 1.5px;
+    border-color: #396bff;
+    background-color: #396bff;
+    color: white;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-right: 1rem;
+    margin-top: 0.5rem;
+}
+
+.editButton:hover {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    transform: scale(1.1);
+}
+
+.deleteButton {
+    width: 4rem;
+    height: 2rem;
+    font-weight: bold;
+    border-width: 1.5px;
+    border-color: #ff3d3d;
+    background-color: #ff3d3d;
+    color: white;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-top: 0.5rem;
+}
+
+.deleteButton:hover {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    transform: scale(1.1);
+}
+
+.expired-soon {
+  background-color: #ffdcdc;
+}
+
+.expires-within-two-weeks {
+  background-color: #fff9c4;
+}
+
+.expires-later {
+  background-color: #c8ffcd;
+}
