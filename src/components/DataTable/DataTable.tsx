@@ -1,14 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import "../DataTable/DataTable.css";
-import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
-import { Paper, Box } from '@mui/material';
-import axios from 'axios';
+import { DataGrid, type GridColDef, type GridRenderCellParams, type GridPaginationModel } from '@mui/x-data-grid';
+import { Box } from '@mui/material';
 
-const paginationModel = { page: 0, pageSize: 10 };
+interface DataTableProps {
+  products: Product[];
+  totalRowCount: number;
+  paginationModel: GridPaginationModel;
+  setPaginationModel: React.Dispatch<React.SetStateAction<GridPaginationModel>>;
+}
 
-const DataTable = () => {
+interface Product {
+  id: number;
+  name: string;
+  category: string;
+  unitPrice: number;
+  expirationDate?: string;
+  stockQuantity: number;
+  creationDate: string;
+  updateDate: string;
+}
 
-  const [products, setProducts] = useState([]);
+const DataTable: React.FC<DataTableProps> = ({
+  products,
+  totalRowCount,
+  paginationModel,
+  setPaginationModel,
+}) => {
 
   const getRowClassName = (params: any) => {
     const expirationDate = new Date(params.row.expirationDate);
@@ -27,19 +45,6 @@ const DataTable = () => {
     }
   };
 
-useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get("http://localhost:9090/api/products");
-        setProducts(response.data);
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', width: 250, headerAlign: 'center', align: 'center'},
     { field: 'category', headerName: 'Category', width: 130, headerAlign: 'center', align: 'center' },
@@ -57,8 +62,7 @@ useEffect(() => {
         } else if (params.value >= 5 && params.value <= 10) {
           color = "#ff9800";
         }
-
-        return <Box sx={{ background: color }}>{params.value}</Box>;
+        return <Box sx={{ background: color, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{params.value}</Box>;
       },
     },
     { field: 'expirationDate', headerName: 'Expiration date', width: 150, headerAlign: 'center', align: 'center' },
@@ -71,15 +75,18 @@ useEffect(() => {
   ];
 
   return (
+    <Box sx={{height: 'auto', width: '55%'}}>
       <DataGrid
         rows={products}
         columns={columns}
-        initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[10]}
-        sx={{ border: 0, width: '55%' }}
+        rowCount={totalRowCount}
+        pageSizeOptions={[5, 10, 20, 50]}
+        paginationModel={paginationModel}
+        paginationMode="server"
+        onPaginationModelChange={setPaginationModel}
         getRowClassName={getRowClassName}
-        hideFooterPagination
       />
+    </Box>
   );
 }
 
