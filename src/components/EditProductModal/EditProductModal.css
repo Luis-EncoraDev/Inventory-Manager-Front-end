@@ -1,0 +1,53 @@
+/* src/components/ProductEditModal/EditProductModal.css */
+
+.edit-modal-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: #fff; /* background.paper */
+    border: 2px solid #000;
+    box-shadow: 0px 11px 15px -7px rgba(0,0,0,0.2), 0px 24px 38px 3px rgba(0,0,0,0.14), 0px 9px 46px 8px rgba(0,0,0,0.12); /* boxShadow: 24 */
+    padding: 32px; /* p: 4 (MUI default spacing is 8px per unit) */
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Styles for TextField and Select components to ensure rounded corners */
+/* These target MUI's internal classes for consistent styling */
+.MuiTextField-root .MuiOutlinedInput-root,
+.MuiFormControl-root .MuiOutlinedInput-root {
+    border-radius: 8px;
+}
+
+/* Specific styling for the Save and Cancel buttons */
+.modal-button-cancel {
+    border-radius: 8px;
+    text-transform: none;
+    border-color: #6366F1;
+    color: #6366F1;
+}
+
+.modal-button-cancel:hover {
+    border-color: #4F46E5;
+    background-color: rgba(99, 102, 241, 0.04);
+}
+
+.modal-button-save {
+    border-radius: 8px;
+    text-transform: none;
+    background-color: #6366F1;
+}
+
+.modal-button-save:hover {
+    background-color: #4F46E5;
+}
+
+/* Flexbox for button container */
+.modal-buttons-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px; /* gap: 2 (MUI default spacing is 8px per unit) */
+    margin-top: 24px; /* mb: 3 (MUI default spacing is 8px per unit) */
+}
