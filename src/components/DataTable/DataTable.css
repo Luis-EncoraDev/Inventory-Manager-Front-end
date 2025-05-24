@@ -48,3 +48,21 @@
 .expires-later {
   background-color: #c8ffcd;
 }
+
+.out-of-stock-strike .MuiDataGrid-cell {
+    text-decoration: line-through;
+    color: #888; /* Optional: make text slightly gray */
+}
+
+/* If you want the entire row to be struck through, not just cells: */
+.out-of-stock-strike.MuiDataGrid-row {
+    text-decoration: line-through;
+    color: #888;
+}
+
+/* Ensure the strike-through applies to specific columns if needed */
+/* For example, if you want only the name and price to be struck through */
+.out-of-stock-strike .MuiDataGrid-cell[data-field="name"],
+.out-of-stock-strike .MuiDataGrid-cell[data-field="unitPrice"] {
+    text-decoration: line-through;
+}

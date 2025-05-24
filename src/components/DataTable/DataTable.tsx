@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import "../DataTable/DataTable.css";
-import { DataGrid, type GridColDef, type GridRenderCellParams, type GridPaginationModel } from '@mui/x-data-grid';
-import { Box } from '@mui/material';
+import { DataGrid, type GridColDef, type GridRenderCellParams, type GridPaginationModel, type GridRowId } from '@mui/x-data-grid';
+import { Box, Checkbox } from '@mui/material';
 
 interface DataTableProps {
   products: Product[];
   totalRowCount: number;
   paginationModel: GridPaginationModel;
   setPaginationModel: React.Dispatch<React.SetStateAction<GridPaginationModel>>;
+  onMarkOutOfStock: (id: number) => Promise<void>;
+  onMarkInStock: (id: number) => Promise<void>;
+  handleEditButtonClick: (id: GridRowId) => Promise<void>; // Added edit handler prop
+  handleDeleteButtonClick: (id: GridRowId) => Promise<void>; // Added delete handler prop
 }
 
 interface Product {
@@ -26,6 +30,10 @@ const DataTable: React.FC<DataTableProps> = ({
   totalRowCount,
   paginationModel,
   setPaginationModel,
+  onMarkOutOfStock,
+  onMarkInStock,
+  handleEditButtonClick, // Destructure new prop
+  handleDeleteButtonClick // Destructure new prop
 }) => {
 
   const getRowClassName = (params: any) => {
@@ -34,18 +42,50 @@ const DataTable: React.FC<DataTableProps> = ({
     const oneWeek = 7 * 24 * 60 * 60 * 1000;
     const twoWeeks = 2 * oneWeek;
 
+    let classes = '';
+
     if (!params.row.expirationDate) {
-      return '';
+      // No expiration date specific class
     } else if (expirationDate.getTime() - today.getTime() < oneWeek) {
-      return 'expired-soon';
+      classes += 'expired-soon';
     } else if (expirationDate.getTime() - today.getTime() < twoWeeks) {
-      return 'expires-within-two-weeks';
+      classes += 'expires-within-two-weeks';
     } else {
-      return 'expires-later';
+      classes += 'expires-later';
     }
+
+    // Add strike-through class if stockQuantity is 0
+    if (params.row.stockQuantity === 0) {
+      classes += ' out-of-stock-strike';
+    }
+
+    return classes.trim();
   };
 
+  const handleCheck = useCallback((id: number) => products.some(product => product.id === id && product.stockQuantity === 0), [products]);
+
   const columns: GridColDef[] = [
+    {
+      field: 'checkbox',
+      headerName: '',
+      width: 50,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<Product>) => (
+        <Checkbox
+          onChange={(event) => {
+            if (event.target.checked) {
+              onMarkOutOfStock(Number(params.row.id));
+            } else {
+              onMarkInStock(Number(params.row.id));
+            }
+          }}
+          checked={handleCheck(params.row.id)}
+        />
+      ),
+      headerAlign: 'center',
+      align: 'center',
+    },
     { field: 'name', headerName: 'Name', width: 250, headerAlign: 'center', align: 'center'},
     { field: 'category', headerName: 'Category', width: 130, headerAlign: 'center', align: 'center' },
     { field: 'unitPrice', headerName: 'Unit price', width: 130, headerAlign: 'center', align: 'center' },
@@ -66,16 +106,18 @@ const DataTable: React.FC<DataTableProps> = ({
       },
     },
     { field: 'expirationDate', headerName: 'Expiration date', width: 150, headerAlign: 'center', align: 'center' },
-    { field: 'Actions', width: 180, sortable: false, renderCell: () => (
+    { field: 'Actions', width: 180, sortable: false, renderCell: (params) => (
       <div>
-        <button className='editButton'>Edit</button>
-        <button className='deleteButton'>Delete</button>
+        {/* Call handleEditButtonClick with the row's ID */}
+        <button className='editButton' onClick={() => handleEditButtonClick(params.id)}>Edit</button>
+        {/* Call handleDeleteButtonClick with the row's ID */}
+        <button className='deleteButton' onClick={() => handleDeleteButtonClick(params.id)}>Delete</button>
       </div>
     ), headerAlign: 'center', align: 'center'}
   ];
 
   return (
-    <Box sx={{height: 'auto', width: '55%'}}>
+    <Box sx={{height: 'auto', width: '80%'}}> {/* Adjusted width for better layout */}
       <DataGrid
         rows={products}
         columns={columns}

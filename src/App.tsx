@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import DataTable from "./components/DataTable/DataTable.tsx";
 import SearchComponent from "./components/SearchComponent/SearchComponent.tsx";
-import './App.css';
-import axios from 'axios';
-import { type GridPaginationModel } from '@mui/x-data-grid';
+import ProductEditModal from "./components/EditProductModal/EditProductModal.tsx"; // Import the new modal component
+import "./App.css";
+import axios from "axios";
+import { type GridPaginationModel, type GridRowId } from "@mui/x-data-grid";
 
-interface Product {
+export interface Product {
   id: number;
   name: string;
   category: string;
@@ -28,31 +29,38 @@ function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalRowCount, setTotalRowCount] = useState<number>(0);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-
-
-  const [filterName, setFilterName] = useState<string>('');
+  const [filterName, setFilterName] = useState<string>("");
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
-  const [filterAvailability, setFilterAvailability] = useState<string>('All');
-
+  const [filterAvailability, setFilterAvailability] = useState<string>("All");
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
   });
 
+  // State for the edit modal: controls visibility and the product being edited
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  /**
+   * Fetches product data from the backend API based on current filters and pagination.
+   * This function is memoized using useCallback to prevent unnecessary re-renders.
+   */
   const fetchProducts = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      params.append('page', paginationModel.page.toString());
-      params.append('size', paginationModel.pageSize.toString());
+      params.append("page", paginationModel.page.toString());
+      params.append("size", paginationModel.pageSize.toString());
 
-      if (filterName) {
-        params.append('name', filterName);
-      }
+      if (filterName) params.append("name", filterName);
+
       if (filterCategory.length > 0) {
-        filterCategory.forEach(category => params.append('category', category));
+        filterCategory.forEach((category) =>
+          params.append("category", category)
+        );
       }
-      if (filterAvailability !== 'All') {
-        params.append('inStock', (filterAvailability === 'In stock').toString());
+
+      if (filterAvailability !== "All") {
+        params.append("inStock", (filterAvailability === "In stock").toString());
       }
 
       const response = await axios.get<ProductPageResponse>(
@@ -63,47 +71,186 @@ function App() {
       setTotalRowCount(response.data.totalElements); // Update total rows for pagination
 
       const uniqueCategories = new Set<string>();
-      response.data.content.forEach(product => uniqueCategories.add(product.category));
-
+      response.data.content.forEach((product) =>
+        uniqueCategories.add(product.category)
+      );
       setAvailableCategories(["All", ...Array.from(uniqueCategories)]);
-
     } catch (err: any) {
       console.error("Error fetching data:", err);
-      setProducts([]);
-      setTotalRowCount(0);
-    } finally {
+      setProducts([]); // Clear products on error
+      setTotalRowCount(0); // Reset total count on error
+      alert("Failed to fetch products. Please try again."); // Add user-friendly alert
     }
   }, [filterName, filterCategory, filterAvailability, paginationModel]); // Dependencies for re-fetching
 
-  // Trigger fetch when filter or pagination/sort models change
+  /**
+   * Handles changes to the filter criteria from the SearchComponent.
+   * Resets pagination to the first page when filters are applied.
+   */
+  const handleFilterChange = useCallback(
+    (
+      name: string,
+      categories: string[],
+      availability: string
+    ) => {
+      // When filters change, reset to the first page
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      setFilterName(name);
+      setFilterCategory(categories);
+      setFilterAvailability(availability);
+    }, []);
+
+  /**
+   * Helper function to update a product's stock quantity in the local state.
+   * This provides immediate UI feedback (optimistic update).
+   */
+  const updateProductStockLocally = useCallback((id: number, newStockQuantity: number) => {
+    setProducts(prevProducts =>
+      prevProducts.map(product =>
+        product.id === id ? { ...product, stockQuantity: newStockQuantity } : product
+      )
+    );
+  }, []);
+
+  /**
+   * Function to mark a product out of stock.
+   * Includes optimistic UI update and error handling.
+   */
+  const markOutOfStock = useCallback(async (id: number) => {
+    console.log(`Checkbox checked: Marking product ${id} out of stock...`);
+    const originalProduct = products.find(p => p.id === id); // Store original state for potential revert
+    updateProductStockLocally(id, 0); // Optimistic UI update
+
+    try {
+      await axios.post(`http://localhost:9090/api/products/${id}/outofstock`);
+      fetchProducts(); // Re-fetch to ensure consistency
+    } catch (err: any) {
+      console.error("An error occurred when setting product out of stock: ", err);
+      alert(`Failed to mark product ${id} out of stock.`);
+      // Revert optimistic update if API call fails
+      if (originalProduct) {
+        updateProductStockLocally(id, originalProduct.stockQuantity);
+      }
+      fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
+    }
+  }, [products, updateProductStockLocally, fetchProducts]);
+
+  /**
+   * Function to mark a product in stock with a default quantity.
+   * Includes optimistic UI update and error handling.
+   */
+  const markInStock = useCallback(async (id: number, quantity: number = 10) => {
+    console.log(`Checkbox unchecked: Marking product ${id} in stock (qty ${quantity})...`);
+    const originalProduct = products.find(p => p.id === id); // Store original state for potential revert
+    updateProductStockLocally(id, quantity); // Optimistic UI update
+
+    try {
+      // Corrected: Use axios.put to match Spring Boot @PutMapping
+      await axios.put(`http://localhost:9090/api/products/${id}/instock?quantity=${quantity}`);
+      fetchProducts(); // Re-fetch to ensure consistency
+    } catch (err: any) {
+      console.error("An error occurred when setting product's stock: ", err);
+      alert(`Failed to mark product ${id} in stock.`);
+      // Revert optimistic update if API call fails
+      if (originalProduct) {
+        updateProductStockLocally(id, originalProduct.stockQuantity);
+      }
+      fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
+    }
+  }, [products, updateProductStockLocally, fetchProducts]);
+
+  /**
+   * Handler for the "Edit" button click in DataTable.
+   * Sets the product to be edited and opens the modal.
+   */
+  const handleEditButtonClick = useCallback(async (id: GridRowId) => {
+    // Find the product in the current products state
+    const productToEdit = products.find(p => p.id === id);
+    if (productToEdit) {
+      setEditingProduct(productToEdit); // Set the product data for the modal
+      setIsEditModalOpen(true); // Open the modal
+    } else {
+      alert("Product not found for editing.");
+    }
+  }, [products]); // Dependency on products to ensure we find the current product
+
+  /**
+   * Handler for the "Delete" button click in DataTable.
+   * Prompts for confirmation and then sends a DELETE request.
+   */
+  const handleDeleteButtonClick = useCallback(async (id: GridRowId) => {
+    // IMPORTANT: For real applications, use a custom modal for confirmation
+    // instead of window.confirm due to potential browser blocking.
+    if (!window.confirm(`Are you sure you want to delete product with ID: ${id}?`)) {
+      return; // User cancelled the deletion
+    }
+    try {
+      await axios.delete(`http://localhost:9090/api/products/${id}`);
+      alert(`Product with ID ${id} deleted successfully!`);
+      fetchProducts(); // Re-fetch products to update the table after deletion
+    } catch (err: any) {
+      console.error(`An error occurred when deleting product with id ${id}:`, err);
+      alert(`Failed to delete product with ID ${id}.`);
+    }
+  }, [fetchProducts]); // Dependency on fetchProducts to refresh data
+
+  /**
+   * Handler for closing the edit modal.
+   * Resets the modal state.
+   */
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setEditingProduct(null); // Clear the editing product state
+  }, []);
+
+  /**
+   * Handler for saving edited product from the modal.
+   * Sends PUT request to update the product in the backend.
+   */
+  const handleSaveEditedProduct = useCallback(async (updatedProduct: Product) => {
+    try {
+      // Send the updated product data to the backend
+      await axios.put(`http://localhost:9090/api/products/${updatedProduct.id}`, updatedProduct);
+      alert(`Product ${updatedProduct.name} updated successfully!`);
+      fetchProducts(); // Re-fetch products to update the table with the new data
+      handleCloseEditModal(); // Close the modal after successful save
+    } catch (err: any) {
+      console.error(`An error occurred when updating product ${updatedProduct.id}:`, err);
+      alert(`Failed to update product ${updatedProduct.name}.`);
+    }
+  }, [fetchProducts, handleCloseEditModal]);
+
+  // Effect hook to trigger initial data fetching when the component mounts
+  // and whenever the fetchProducts callback itself changes.
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Handle filter changes from SearchComponent
-  const handleFilterChange = useCallback((
-    name: string,
-    categories: string[],
-    availability: string
-  ) => {
-    // When filters change, reset to the first page
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
-    setFilterName(name);
-    setFilterCategory(categories);
-    setFilterAvailability(availability);
-  }, []);
-
   return (
     <div className="app">
+      {/* Search component for filtering */}
       <SearchComponent
         onFilterChange={handleFilterChange}
-        availableCategories={availableCategories} // Pass available categories to SearchComponent
+        availableCategories={availableCategories}
       />
+      {/* Data table for displaying products */}
       <DataTable
         products={products}
         totalRowCount={totalRowCount}
         paginationModel={paginationModel}
         setPaginationModel={setPaginationModel}
+        onMarkInStock={markInStock}
+        onMarkOutOfStock={markOutOfStock}
+        handleEditButtonClick={handleEditButtonClick} // Pass the edit handler to DataTable
+        handleDeleteButtonClick={handleDeleteButtonClick} // Pass the delete handler to DataTable
+      />
+
+      {/* Product Edit Modal component */}
+      <ProductEditModal
+        isOpen={isEditModalOpen} // Controls modal visibility
+        onClose={handleCloseEditModal} // Callback for closing the modal
+        product={editingProduct} // The product data to display/edit in the modal
+        onSave={handleSaveEditedProduct} // Callback for saving changes from the modal
       />
     </div>
   );
