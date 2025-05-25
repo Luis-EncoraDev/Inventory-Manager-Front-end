@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import DataTable from "./components/DataTable/DataTable.tsx";
 import SearchComponent from "./components/SearchComponent/SearchComponent.tsx";
-import ProductEditModal from "./components/EditProductModal/EditProductModal.tsx"; // Import the new modal component
+import ProductEditModal from "./components/EditProductModal/EditProductModal.tsx";
+import MetricsTable from "./components/MetricsTable/MetricsTable.tsx";
 import "./App.css";
 import axios from "axios";
 import { type GridPaginationModel, type GridRowId } from "@mui/x-data-grid";
@@ -25,6 +26,12 @@ interface ProductPageResponse {
   size: number;
 }
 
+interface MetricsResponse {
+  totalStock: number,
+  totalValue: number,
+  averageValue: number
+}
+
 function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalRowCount, setTotalRowCount] = useState<number>(0);
@@ -37,14 +44,10 @@ function App() {
     pageSize: 10,
   });
 
-  // State for the edit modal: controls visibility and the product being edited
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [metrics, setMetrics] = useState<Object[]>([]);
 
-  /**
-   * Fetches product data from the backend API based on current filters and pagination.
-   * This function is memoized using useCallback to prevent unnecessary re-renders.
-   */
   const fetchProducts = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -68,25 +71,57 @@ function App() {
       );
 
       setProducts(response.data.content);
-      setTotalRowCount(response.data.totalElements); // Update total rows for pagination
-
+      console.log("Products", response.data.content)
+      setTotalRowCount(response.data.totalElements);
+    
       const uniqueCategories = new Set<string>();
       response.data.content.forEach((product) =>
         uniqueCategories.add(product.category)
       );
+      fetchMetrics(Array.from(uniqueCategories));
       setAvailableCategories(["All", ...Array.from(uniqueCategories)]);
     } catch (err: any) {
       console.error("Error fetching data:", err);
       setProducts([]); // Clear products on error
       setTotalRowCount(0); // Reset total count on error
-      alert("Failed to fetch products. Please try again."); // Add user-friendly alert
+      alert("Failed to fetch products. Please try again.");
     }
   }, [filterName, filterCategory, filterAvailability, paginationModel]); // Dependencies for re-fetching
 
-  /**
-   * Handles changes to the filter criteria from the SearchComponent.
-   * Resets pagination to the first page when filters are applied.
+  /*
+    Handles changes to the filter criteria from the SearchComponent.
+    Resets pagination to the first page when filters are applied.
    */
+
+  const fetchMetrics = useCallback(async (categories: string[]) => {
+    try {
+      const metricsResponse = categories.map(async(category) => {
+        const [totalStock, totalValue, averageValue] = await Promise.all([
+          axios.get(`http://localhost:9090/api/products/categoryTotalStock/${category}`),
+          axios.get(`http://localhost:9090/api/products/categoryTotalValue/${category}`),
+          axios.get(`http://localhost:9090/api/products/categoryAverageValue/${category}`)
+        ]);
+
+      return {
+                id: categories.indexOf(category) + 1,
+                category: category,
+                totalStock: totalStock.data,
+                totalValue: totalValue.data,
+                averageValue: averageValue.data
+            };
+
+      });
+      
+      const metrics = await Promise.all(metricsResponse);
+      console.log("Metrics:", metrics)
+      setMetrics(metrics);
+    }
+    catch (error) { console.error(error)}
+     
+  
+  }, [availableCategories]);
+  
+
   const handleFilterChange = useCallback(
     (
       name: string,
@@ -226,6 +261,10 @@ function App() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // useEffect(() => {
+  //   fetchMetrics();
+  // }, [availableCategories])
+
   return (
     <div className="app">
       {/* Search component for filtering */}
@@ -251,6 +290,10 @@ function App() {
         onClose={handleCloseEditModal} // Callback for closing the modal
         product={editingProduct} // The product data to display/edit in the modal
         onSave={handleSaveEditedProduct} // Callback for saving changes from the modal
+      />
+
+      <MetricsTable
+        metrics={metrics}
       />
     </div>
   );

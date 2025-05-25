@@ -117,7 +117,7 @@ const DataTable: React.FC<DataTableProps> = ({
   ];
 
   return (
-    <Box sx={{height: 'auto', width: '80%'}}> {/* Adjusted width for better layout */}
+    <Box sx={{height: 'auto', width: '55 %'}}> {/* Adjusted width for better layout */}
       <DataGrid
         rows={products}
         columns={columns}
