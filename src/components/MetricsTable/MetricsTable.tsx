@@ -20,7 +20,7 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ metrics }) => {
         <DataGrid 
         columns={columns}
         rows={metrics}
-        sx={{width: '45%', marginBottom: 50}}
+        sx={{width: '45%', marginBottom: 50, border: 0}}
         hideFooter
         />
     )

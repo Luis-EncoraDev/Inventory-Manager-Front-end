@@ -10,8 +10,8 @@ interface DataTableProps {
   setPaginationModel: React.Dispatch<React.SetStateAction<GridPaginationModel>>;
   onMarkOutOfStock: (id: number) => Promise<void>;
   onMarkInStock: (id: number) => Promise<void>;
-  handleEditButtonClick: (id: GridRowId) => Promise<void>; // Added edit handler prop
-  handleDeleteButtonClick: (id: GridRowId) => Promise<void>; // Added delete handler prop
+  handleEditButtonClick: (id: GridRowId) => Promise<void>;
+  handleDeleteButtonClick: (id: GridRowId) => Promise<void>; 
 }
 
 interface Product {
@@ -32,8 +32,8 @@ const DataTable: React.FC<DataTableProps> = ({
   setPaginationModel,
   onMarkOutOfStock,
   onMarkInStock,
-  handleEditButtonClick, // Destructure new prop
-  handleDeleteButtonClick // Destructure new prop
+  handleEditButtonClick,
+  handleDeleteButtonClick
 }) => {
 
   const getRowClassName = (params: any) => {
@@ -45,7 +45,6 @@ const DataTable: React.FC<DataTableProps> = ({
     let classes = '';
 
     if (!params.row.expirationDate) {
-      // No expiration date specific class
     } else if (expirationDate.getTime() - today.getTime() < oneWeek) {
       classes += 'expired-soon';
     } else if (expirationDate.getTime() - today.getTime() < twoWeeks) {
@@ -54,7 +53,6 @@ const DataTable: React.FC<DataTableProps> = ({
       classes += 'expires-later';
     }
 
-    // Add strike-through class if stockQuantity is 0
     if (params.row.stockQuantity === 0) {
       classes += ' out-of-stock-strike';
     }
@@ -100,7 +98,7 @@ const DataTable: React.FC<DataTableProps> = ({
         if (params.value < 5) {
           color = "#f44336";
         } else if (params.value >= 5 && params.value <= 10) {
-          color = "#ff9800";
+          color = "#f47906";
         }
         return <Box sx={{ background: color, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{params.value}</Box>;
       },
@@ -108,16 +106,14 @@ const DataTable: React.FC<DataTableProps> = ({
     { field: 'expirationDate', headerName: 'Expiration date', width: 150, headerAlign: 'center', align: 'center' },
     { field: 'Actions', width: 180, sortable: false, renderCell: (params) => (
       <div>
-        {/* Call handleEditButtonClick with the row's ID */}
         <button className='editButton' onClick={() => handleEditButtonClick(params.id)}>Edit</button>
-        {/* Call handleDeleteButtonClick with the row's ID */}
         <button className='deleteButton' onClick={() => handleDeleteButtonClick(params.id)}>Delete</button>
       </div>
     ), headerAlign: 'center', align: 'center'}
   ];
 
   return (
-    <Box sx={{height: 'auto', width: '55 %'}}> {/* Adjusted width for better layout */}
+    <Box sx={{height: 'auto', width: '55 %'}}>
       <DataGrid
         rows={products}
         columns={columns}

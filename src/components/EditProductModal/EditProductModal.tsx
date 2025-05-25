@@ -13,35 +13,30 @@ interface ProductEditModalProps {
 
 
 const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , onClose, onSave, categories }) => {
-  // Local state for form fields, initialized from the 'product' prop
   const [editedProduct, setEditedProduct] = useState<Product | null>(null);
+  const [addCategoryClicked, setAddCategoryClicked] = useState<boolean>(false);
 
-  // Effect to update local state when the 'product' prop changes (i.e., a new product is selected for editing)
   useEffect(() => {
     if (product) {
-      // Create a deep copy to avoid direct mutation of the prop
       setEditedProduct({ ...product });
     } else {
       setEditedProduct(null);
     }
   }, [product]);
 
-  // Handle input changes for text fields
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditedProduct(prev => {
       if (!prev) return null;
-      // Handle numeric fields
       if (name === 'unitPrice' || name === 'stockQuantity') {
         const numValue = parseFloat(value);
-        return { ...prev, [name]: isNaN(numValue) ? '' : numValue }; // Allow empty string for partial input
+        return { ...prev, [name]: isNaN(numValue) ? '' : numValue };
       }
       return { ...prev, [name]: value };
     });
   };
 
-  // Handle select changes for category
-  const handleSelectChange = (e: any) => { // Use 'any' for event type from Select for simplicity
+  const handleSelectChange = (e: any) => {
     const { name, value } = e.target;
     setEditedProduct(prev => {
       if (!prev) return null;
@@ -49,13 +44,11 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
     });
   };
 
-  // Handle date input change
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditedProduct(prev => {
       if (!prev) return null;
-      // Ensure date is stored as a string in YYYY-MM-DD format if needed by backend
-      return { ...prev, [name]: value || undefined }; // Store undefined if empty
+      return { ...prev, [name]: value || undefined };
     });
   };
 
@@ -71,20 +64,22 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
         alert('Unit price must be greater than 0 and stock quantity cannot be negative.');
         return;
       }
-      onSave(editedProduct); // Call the onSave callback from parent
+      onSave(editedProduct);
     }
   };
 
-  if (!editedProduct) return null; // Don't render modal if no product is being edited
+  if (!editedProduct) return null;
 
   return (
     <Modal
       open={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        onClose();
+        setAddCategoryClicked(false);
+      }}
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
     >
-      {/* Apply the CSS class 'edit-modal-box' */}
       <Box className="edit-modal-box" component="form" onSubmit={handleSubmit}>
         <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
           Edit Product
@@ -109,10 +104,31 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
             value={editedProduct.category}
             label="Category"
             onChange={handleSelectChange}
-            required
+            required={!addCategoryClicked ? true : false}
           >
             { categories?.map(category => <MenuItem value={category}>{category}</MenuItem>) }
           </Select>
+          { !addCategoryClicked &&  
+          <Button 
+            variant='outlined'
+            className='modal-button-addCategory'
+            onClick={() => setAddCategoryClicked(true)}
+            sx={{ mt: 2 }}
+          >
+            Add new category
+          </Button>
+          }
+
+          {
+          addCategoryClicked && 
+          <TextField 
+          name="category"
+          label="Add new category"
+          onChange={handleChange}
+          required
+          sx={{ mt: 2 }}
+          />
+          }
         </FormControl>
         <TextField
           margin="dense"
@@ -141,6 +157,8 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
         <TextField
           margin="dense"
           name="expirationDate"
+          label="Expiration date"
+          InputLabelProps={{shrink: true}}
           type="date"
           fullWidth
           variant="outlined"
@@ -148,19 +166,21 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
           onChange={handleDateChange}
           sx={{ mb: 3, textAlign: 'shrink' }}
         />
-        {/* Apply the CSS class 'modal-buttons-container' */}
         <Box className="modal-buttons-container">
           <Button
             variant="outlined"
-            onClick={onClose}
-            className="modal-button-cancel" // Apply the CSS class for cancel button
+            onClick={() => {
+              onClose();
+              setAddCategoryClicked(false);
+            }}
+            className="modal-button-cancel"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
-            className="modal-button-save" // Apply the CSS class for save button
+            className="modal-button-save"
           >
             Save Changes
           </Button>

@@ -1,29 +1,25 @@
 .container {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    gap: 2rem;
     justify-content: space-evenly;
-    width: 70%;
+    align-content: center;
+    width: 90%;
+    height: fit-content;
     padding: 2rem;
     font-family: monospace;
-}
-
-.nameContainer {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+    margin-top: 2rem;
 }
 
 .categoryContainer {
     display: flex;
-    gap: 1rem;
     align-items: center;
+    gap: 1rem
 }
 
 .availabilityContainer {
     display: flex;
-    gap: 1rem;
     align-items: center;
+    gap: 1rem
 }
 
 .inputName {
@@ -31,22 +27,14 @@
     height: 1.5rem;
     border-radius: 8px;
     border-width: 1px;
-    text-indent: 5px;
-}
-
-.inputCategory {
-
-}
-
-.inputAvailability {
 }
 
 .searchButton {
-    width: 5rem;
-    height: 2rem;
+    width: 8rem;
     font-weight: bold;
     background-color: transparent;
     border-color: black;
+    color: black;
     border-width: 1.5px;
     border-radius: 8px;
     cursor: pointer;
@@ -56,6 +44,12 @@
 .searchButton:hover {
     transition: ease 0.3s;
     color: white;
-    background-color: black;
     transform: scale(1.1);
+}
+
+
+.createButton:hover {
+    transition: ease 0.3s;
+    transform: scale(1.1);
+    background-color: rgb(29, 15, 231);
 }

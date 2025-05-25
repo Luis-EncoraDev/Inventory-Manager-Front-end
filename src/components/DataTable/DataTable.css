@@ -38,11 +38,11 @@
 }
 
 .expired-soon {
-  background-color: #ffdcdc;
+  background-color: #f9cfcf;
 }
 
 .expires-within-two-weeks {
-  background-color: #fff9c4;
+  background-color: #fed07f;
 }
 
 .expires-later {
@@ -51,17 +51,14 @@
 
 .out-of-stock-strike .MuiDataGrid-cell {
     text-decoration: line-through;
-    color: #888; /* Optional: make text slightly gray */
+    color: #888;
 }
 
-/* If you want the entire row to be struck through, not just cells: */
 .out-of-stock-strike.MuiDataGrid-row {
     text-decoration: line-through;
     color: #888;
 }
 
-/* Ensure the strike-through applies to specific columns if needed */
-/* For example, if you want only the name and price to be struck through */
 .out-of-stock-strike .MuiDataGrid-cell[data-field="name"],
 .out-of-stock-strike .MuiDataGrid-cell[data-field="unitPrice"] {
     text-decoration: line-through;

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import "./SearchComponent.css";
+import { TextField, Button, Select, MenuItem, InputLabel } from '@mui/material';
 
 interface SearchComponentProps {
   onFilterChange: (name: string, categories: string[], availability: string) => void;
   availableCategories: string[];
+  handleCreateButtonClick: () => void
 }
 
-const SearchComponent: React.FC<SearchComponentProps> = ({ onFilterChange, availableCategories }) => {
+const SearchComponent: React.FC<SearchComponentProps> = ({ onFilterChange, availableCategories, handleCreateButtonClick }) => {
   // Local state to manage input values before applying filters
   const [nameInput, setNameInput] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -31,7 +33,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ onFilterChange, avail
     );
   };
 
-  const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCategoryChange = (event: any) => {
     const value = event.target.value;
     if (value === 'All') {
       setSelectedCategories([]);
@@ -40,47 +42,59 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ onFilterChange, avail
     }
   };
 
-
   return (
     <div className="container">
-      <div className="nameContainer">
-        <label>Product name:</label>
-        <input
-          type="search"
-          className="inputName"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSearch();
-          }}
-        />
-      </div>
+      <TextField
+        type="search"
+        label="Product name"
+        className="inputName"
+        value={nameInput}
+        onChange={(e) => setNameInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleSearch();
+        }}
+      />
       <div className="categoryContainer">
-        <label>Category:</label>
-        <select
+        <InputLabel>Category:</InputLabel>
+        <Select
           className="inputCategory"
           value={selectedCategories.length === 0 ? 'All' : selectedCategories[0]}
           onChange={handleCategoryChange}
+          style={{width: "10rem"}}
         >
-          <option key="All" value="All">All</option>
+          <MenuItem key="All" value="All">All</MenuItem>
           {availableCategories.filter(category => category !== 'All').map(category => (
-            <option key={category} value={category}>{category}</option>
+            <MenuItem key={category} value={category}>{category}</MenuItem>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="availabilityContainer">
-        <label>Availability:</label>
-        <select
+        <InputLabel>Availability:</InputLabel>
+        <Select
           className="inputAvailability"
           value={selectedAvailability}
           onChange={(e) => setSelectedAvailability(e.target.value)}
+          style={{width: "10rem"}}
         >
-          <option value="All">All</option>
-          <option value="In stock">In stock</option>
-          <option value="Out of stock">Out of stock</option>
-        </select>
+          <MenuItem value="All">All</MenuItem>
+          <MenuItem value="In stock">In stock</MenuItem>
+          <MenuItem value="Out of stock">Out of stock</MenuItem>
+        </Select>
       </div>
-      <button className="searchButton" onClick={handleSearch}>Search</button>
+      <Button 
+      className="searchButton" 
+      onClick={handleSearch}
+      variant="contained"
+      style={{backgroundColor: "black"}}
+      >Search
+      </Button>
+      <Button 
+      className="createButton" 
+      onClick={handleCreateButtonClick}
+      variant="outlined"
+      style={{backgroundColor: "rgb(29, 15, 231)", color: "white", transition: "ease 0.3s"}}
+      >Create new product
+      </Button>
     </div>
   );
 }
