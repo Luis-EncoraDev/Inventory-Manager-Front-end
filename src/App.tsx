@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DataTable from "./components/DataTable/DataTable.tsx";
 import SearchComponent from "./components/SearchComponent/SearchComponent.tsx";
 import ProductEditModal from "./components/EditProductModal/EditProductModal.tsx";
 import MetricsTable from "./components/MetricsTable/MetricsTable.tsx";
+import CreateProductModal from "./components/CreateProductModal/CreateProductModal.tsx";
 import "./App.css";
 import axios from "axios";
 import { type GridPaginationModel, type GridRowId } from "@mui/x-data-grid";
+import { Button } from "@mui/material";
 
 export interface Product {
-  id: number;
+  id?: number;
   name: string;
   category: string;
   unitPrice: number;
-  expirationDate?: string;
+  expirationDate?: Date;
   stockQuantity: number;
-  creationDate: string;
-  updateDate: string;
+  creationDate: Date;
+  updateDate: Date;
 }
 
 interface ProductPageResponse {
@@ -26,11 +28,11 @@ interface ProductPageResponse {
   size: number;
 }
 
-interface MetricsResponse {
-  totalStock: number,
-  totalValue: number,
-  averageValue: number
-}
+// interface MetricsResponse {
+//   totalStock: number,
+//   totalValue: number,
+//   averageValue: number
+// }
 
 function App() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -39,12 +41,14 @@ function App() {
   const [filterName, setFilterName] = useState<string>("");
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterAvailability, setFilterAvailability] = useState<string>("All");
+  const [uniqueCategories, setUniqueCategories] = useState<string[]>();
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [metrics, setMetrics] = useState<Object[]>([]);
 
@@ -71,7 +75,6 @@ function App() {
       );
 
       setProducts(response.data.content);
-      console.log("Products", response.data.content)
       setTotalRowCount(response.data.totalElements);
     
       const uniqueCategories = new Set<string>();
@@ -79,19 +82,15 @@ function App() {
         uniqueCategories.add(product.category)
       );
       fetchMetrics(Array.from(uniqueCategories));
+      setUniqueCategories(Array.from(uniqueCategories));
       setAvailableCategories(["All", ...Array.from(uniqueCategories)]);
     } catch (err: any) {
       console.error("Error fetching data:", err);
-      setProducts([]); // Clear products on error
-      setTotalRowCount(0); // Reset total count on error
+      setProducts([]);
+      setTotalRowCount(0);
       alert("Failed to fetch products. Please try again.");
     }
-  }, [filterName, filterCategory, filterAvailability, paginationModel]); // Dependencies for re-fetching
-
-  /*
-    Handles changes to the filter criteria from the SearchComponent.
-    Resets pagination to the first page when filters are applied.
-   */
+  }, [filterName, filterCategory, filterAvailability, paginationModel]);
 
   const fetchMetrics = useCallback(async (categories: string[]) => {
     try {
@@ -113,14 +112,26 @@ function App() {
       });
       
       const metrics = await Promise.all(metricsResponse);
-      console.log("Metrics:", metrics)
+      
+      let totalStockOverall = 0; 
+      let totalValueOverall = 0;
+
+      const overallId = metrics.length + 1;
+      metrics.forEach(metric => totalStockOverall += metric.totalStock);
+      metrics.map(metric => totalValueOverall += metric.totalValue);
+      const averageValueOverall = await axios.get("http://localhost:9090/api/products/averageValue");
+
+      metrics.push({
+        id: overallId,
+        category: "Overall",
+        totalStock: totalStockOverall,
+        totalValue: totalValueOverall,
+        averageValue: averageValueOverall.data
+      })
       setMetrics(metrics);
     }
     catch (error) { console.error(error)}
-     
-  
   }, [availableCategories]);
-  
 
   const handleFilterChange = useCallback(
     (
@@ -128,17 +139,12 @@ function App() {
       categories: string[],
       availability: string
     ) => {
-      // When filters change, reset to the first page
       setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setFilterName(name);
       setFilterCategory(categories);
       setFilterAvailability(availability);
     }, []);
 
-  /**
-   * Helper function to update a product's stock quantity in the local state.
-   * This provides immediate UI feedback (optimistic update).
-   */
   const updateProductStockLocally = useCallback((id: number, newStockQuantity: number) => {
     setProducts(prevProducts =>
       prevProducts.map(product =>
@@ -147,35 +153,24 @@ function App() {
     );
   }, []);
 
-  /**
-   * Function to mark a product out of stock.
-   * Includes optimistic UI update and error handling.
-   */
   const markOutOfStock = useCallback(async (id: number) => {
-    console.log(`Checkbox checked: Marking product ${id} out of stock...`);
-    const originalProduct = products.find(p => p.id === id); // Store original state for potential revert
-    updateProductStockLocally(id, 0); // Optimistic UI update
+    const originalProduct = products.find(p => p.id === id);
+    updateProductStockLocally(id, 0);
 
     try {
       await axios.post(`http://localhost:9090/api/products/${id}/outofstock`);
-      fetchProducts(); // Re-fetch to ensure consistency
+      fetchProducts();
     } catch (err: any) {
       console.error("An error occurred when setting product out of stock: ", err);
       alert(`Failed to mark product ${id} out of stock.`);
-      // Revert optimistic update if API call fails
       if (originalProduct) {
         updateProductStockLocally(id, originalProduct.stockQuantity);
       }
-      fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
+      fetchProducts();
     }
   }, [products, updateProductStockLocally, fetchProducts]);
 
-  /**
-   * Function to mark a product in stock with a default quantity.
-   * Includes optimistic UI update and error handling.
-   */
   const markInStock = useCallback(async (id: number, quantity: number = 10) => {
-    console.log(`Checkbox unchecked: Marking product ${id} in stock (qty ${quantity})...`);
     const originalProduct = products.find(p => p.id === id); // Store original state for potential revert
     updateProductStockLocally(id, quantity); // Optimistic UI update
 
@@ -194,85 +189,89 @@ function App() {
     }
   }, [products, updateProductStockLocally, fetchProducts]);
 
-  /**
-   * Handler for the "Edit" button click in DataTable.
-   * Sets the product to be edited and opens the modal.
-   */
+  const handleCreateButtonClick = () => {
+    setIsCreateModalOpen(true);
+  };
+
   const handleEditButtonClick = useCallback(async (id: GridRowId) => {
-    // Find the product in the current products state
     const productToEdit = products.find(p => p.id === id);
     if (productToEdit) {
-      setEditingProduct(productToEdit); // Set the product data for the modal
-      setIsEditModalOpen(true); // Open the modal
+      setEditingProduct(productToEdit); 
+      setIsEditModalOpen(true); 
     } else {
       alert("Product not found for editing.");
     }
-  }, [products]); // Dependency on products to ensure we find the current product
+  }, [products]);
 
-  /**
-   * Handler for the "Delete" button click in DataTable.
-   * Prompts for confirmation and then sends a DELETE request.
-   */
+
   const handleDeleteButtonClick = useCallback(async (id: GridRowId) => {
-    // IMPORTANT: For real applications, use a custom modal for confirmation
-    // instead of window.confirm due to potential browser blocking.
     if (!window.confirm(`Are you sure you want to delete product with ID: ${id}?`)) {
-      return; // User cancelled the deletion
+      return;
     }
     try {
       await axios.delete(`http://localhost:9090/api/products/${id}`);
       alert(`Product with ID ${id} deleted successfully!`);
-      fetchProducts(); // Re-fetch products to update the table after deletion
+      fetchProducts();
     } catch (err: any) {
       console.error(`An error occurred when deleting product with id ${id}:`, err);
       alert(`Failed to delete product with ID ${id}.`);
     }
-  }, [fetchProducts]); // Dependency on fetchProducts to refresh data
+  }, [fetchProducts]);
 
-  /**
-   * Handler for closing the edit modal.
-   * Resets the modal state.
-   */
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
   const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
-    setEditingProduct(null); // Clear the editing product state
+    setEditingProduct(null);
   }, []);
 
-  /**
-   * Handler for saving edited product from the modal.
-   * Sends PUT request to update the product in the backend.
-   */
+  const handleSaveNewProduct = useCallback(async (product: Product) => {
+    try {
+      console.log("New product: ", product);
+      await axios.post("http://localhost:9090/api/products", product);
+      alert(`${product.name} product was successfully created`);
+      fetchProducts();
+      handleCloseCreateModal();
+    } catch (err) { 
+      console.error("An error occurred when creating product", err);
+      alert("Failed to create product!");
+    };
+  }, [])
+
   const handleSaveEditedProduct = useCallback(async (updatedProduct: Product) => {
     try {
-      // Send the updated product data to the backend
+      console.log("Edited product:", updatedProduct);
       await axios.put(`http://localhost:9090/api/products/${updatedProduct.id}`, updatedProduct);
       alert(`Product ${updatedProduct.name} updated successfully!`);
-      fetchProducts(); // Re-fetch products to update the table with the new data
-      handleCloseEditModal(); // Close the modal after successful save
+      fetchProducts();
+      handleCloseEditModal();
     } catch (err: any) {
       console.error(`An error occurred when updating product ${updatedProduct.id}:`, err);
       alert(`Failed to update product ${updatedProduct.name}.`);
     }
   }, [fetchProducts, handleCloseEditModal]);
-
-  // Effect hook to trigger initial data fetching when the component mounts
-  // and whenever the fetchProducts callback itself changes.
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // useEffect(() => {
-  //   fetchMetrics();
-  // }, [availableCategories])
-
   return (
     <div className="app">
-      {/* Search component for filtering */}
-      <SearchComponent
+
+      <div>
+        <SearchComponent
         onFilterChange={handleFilterChange}
         availableCategories={availableCategories}
-      />
-      {/* Data table for displaying products */}
+        />
+        <Button
+          variant="outlined"
+          onClick={handleCreateButtonClick}
+        >
+          Create new product
+        </Button>
+      </div>
+      
       <DataTable
         products={products}
         totalRowCount={totalRowCount}
@@ -280,16 +279,22 @@ function App() {
         setPaginationModel={setPaginationModel}
         onMarkInStock={markInStock}
         onMarkOutOfStock={markOutOfStock}
-        handleEditButtonClick={handleEditButtonClick} // Pass the edit handler to DataTable
-        handleDeleteButtonClick={handleDeleteButtonClick} // Pass the delete handler to DataTable
+        handleEditButtonClick={handleEditButtonClick}
+        handleDeleteButtonClick={handleDeleteButtonClick}
+      />
+      <CreateProductModal 
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        onSave={handleSaveNewProduct}
+        categories={uniqueCategories}
       />
 
-      {/* Product Edit Modal component */}
       <ProductEditModal
-        isOpen={isEditModalOpen} // Controls modal visibility
-        onClose={handleCloseEditModal} // Callback for closing the modal
-        product={editingProduct} // The product data to display/edit in the modal
-        onSave={handleSaveEditedProduct} // Callback for saving changes from the modal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        product={editingProduct} 
+        onSave={handleSaveEditedProduct}
+        categories={uniqueCategories}
       />
 
       <MetricsTable

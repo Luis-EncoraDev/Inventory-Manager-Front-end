@@ -1,50 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Box, TextField, Button, Typography, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { type Product } from '../../App';
-import './EditProductModal.css';
+import './CreateProductModal.css';
 
-interface ProductEditModalProps {
+interface ProductCreateModalProps {
   isOpen: boolean;
-  product: Product | null;
   onClose: () => void;
   onSave: (updatedProduct: Product) => void;
   categories: string[] | undefined
 }
 
-
-const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , onClose, onSave, categories }) => {
+const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose, onSave, categories }) => {
   // Local state for form fields, initialized from the 'product' prop
-  const [editedProduct, setEditedProduct] = useState<Product | null>(null);
-
-  // Effect to update local state when the 'product' prop changes (i.e., a new product is selected for editing)
-  useEffect(() => {
-    if (product) {
-      // Create a deep copy to avoid direct mutation of the prop
-      setEditedProduct({ ...product });
-    } else {
-      setEditedProduct(null);
-    }
-  }, [product]);
+    const [product, setProduct] = useState<Product>({
+    name: '',
+    category: '', // Default to first available category or empty
+    unitPrice: 0,
+    expirationDate: undefined,
+    stockQuantity: 0,
+    creationDate: new Date,
+    updateDate: new Date
+  });
 
   // Handle input changes for text fields
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditedProduct(prev => {
-      if (!prev) return null;
-      // Handle numeric fields
+    setProduct(prev => {
       if (name === 'unitPrice' || name === 'stockQuantity') {
         const numValue = parseFloat(value);
-        return { ...prev, [name]: isNaN(numValue) ? '' : numValue }; // Allow empty string for partial input
+        console.log(`Field ${name} has been set to: ${value}`);
+        return { ...prev, [name]: isNaN(numValue) ? undefined : numValue };
       }
+      console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value };
     });
   };
 
-  // Handle select changes for category
-  const handleSelectChange = (e: any) => { // Use 'any' for event type from Select for simplicity
+  const handleSelectChange = (e: any) => {
     const { name, value } = e.target;
-    setEditedProduct(prev => {
-      if (!prev) return null;
+    setProduct(prev => {
+    console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value };
     });
   };
@@ -52,42 +47,41 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
   // Handle date input change
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setEditedProduct(prev => {
-      if (!prev) return null;
+    setProduct(prev => {
       // Ensure date is stored as a string in YYYY-MM-DD format if needed by backend
+      console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value || undefined }; // Store undefined if empty
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editedProduct) {
+    if (product) {
       // Basic validation before saving
-      if (!editedProduct.name || !editedProduct.category || editedProduct.unitPrice === undefined || editedProduct.stockQuantity === undefined) {
+      if (!product.name || !product.category || product.unitPrice === undefined || product.stockQuantity === undefined) {
         alert('Please fill in all required fields.');
         return;
       }
-      if (editedProduct.unitPrice <= 0 || editedProduct.stockQuantity < 0) {
+      if (product.unitPrice <= 0 || product.stockQuantity < 0) {
         alert('Unit price must be greater than 0 and stock quantity cannot be negative.');
         return;
       }
-      onSave(editedProduct); // Call the onSave callback from parent
+      onSave(product); // Call the onSave callback from parent
     }
   };
 
-  if (!editedProduct) return null; // Don't render modal if no product is being edited
+  useEffect(() => {
+    console.log("Product on modal:", product)
+  }, [product])
 
   return (
     <Modal
       open={isOpen}
       onClose={onClose}
-      aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
     >
-      {/* Apply the CSS class 'edit-modal-box' */}
-      <Box className="edit-modal-box" component="form" onSubmit={handleSubmit}>
+      <Box className="create-modal-box" component="form" onSubmit={handleSubmit}>
         <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
-          Edit Product
+          Create Product
         </Typography>
         <TextField
           margin="dense"
@@ -96,7 +90,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
           type="text"
           fullWidth
           variant="outlined"
-          value={editedProduct.name}
           onChange={handleChange}
           required
           sx={{ mb: 2 }}
@@ -106,7 +99,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
           <Select
             labelId="category-label"
             name="category"
-            value={editedProduct.category}
             label="Category"
             onChange={handleSelectChange}
             required
@@ -121,7 +113,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
           type="number"
           fullWidth
           variant="outlined"
-          value={editedProduct.unitPrice}
           onChange={handleChange}
           required
           sx={{ mb: 2 }}
@@ -133,7 +124,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
           type="number"
           fullWidth
           variant="outlined"
-          value={editedProduct.stockQuantity}
           onChange={handleChange}
           required
           sx={{ mb: 2 }}
@@ -141,14 +131,39 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
         <TextField
           margin="dense"
           name="expirationDate"
+          label="Expiration date"
           type="date"
           fullWidth
           variant="outlined"
-          value={editedProduct.expirationDate || ''}
           onChange={handleDateChange}
+          InputLabelProps={{shrink: true}}
           sx={{ mb: 3, textAlign: 'shrink' }}
         />
-        {/* Apply the CSS class 'modal-buttons-container' */}
+
+        <TextField
+          margin="dense"
+          name="creationDate"
+          label="Creation date"
+          type="date"
+          fullWidth
+          variant="outlined"
+          onChange={handleDateChange}
+          InputLabelProps={{shrink: true}}
+          sx={{ mb: 3, textAlign: 'shrink' }}
+        />
+
+        <TextField
+          margin="dense"
+          name="updateDate"
+          label="Update date"
+          type="date"
+          fullWidth
+          variant="outlined"
+          onChange={handleDateChange}
+          InputLabelProps={{shrink: true}}
+          sx={{ mb: 3, textAlign: 'shrink' }}
+        />
+
         <Box className="modal-buttons-container">
           <Button
             variant="outlined"
@@ -170,4 +185,4 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
   );
 };
 
-export default EditProductModal;
+export default CreateProductModal;

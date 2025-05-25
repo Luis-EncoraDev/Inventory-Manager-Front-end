@@ -15,14 +15,14 @@ interface DataTableProps {
 }
 
 interface Product {
-  id: number;
+  id?: number;
   name: string;
   category: string;
   unitPrice: number;
-  expirationDate?: string;
+  expirationDate?: Date;
   stockQuantity: number;
-  creationDate: string;
-  updateDate: string;
+  creationDate: Date;
+  updateDate: Date;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -62,7 +62,7 @@ const DataTable: React.FC<DataTableProps> = ({
     return classes.trim();
   };
 
-  const handleCheck = useCallback((id: number) => products.some(product => product.id === id && product.stockQuantity === 0), [products]);
+  const handleCheck = useCallback((id: number | undefined) => products.some(product => product.id === id && product.stockQuantity === 0), [products]);
 
   const columns: GridColDef[] = [
     {
