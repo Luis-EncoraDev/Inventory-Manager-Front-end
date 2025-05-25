@@ -1,31 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Box, TextField, Button, Typography, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import { type Product } from '../../App'; // Assuming Product interface is also in App.tsx or a shared types file
-import './EditProductModal.css'; // Import the new CSS file
+import { type Product } from '../../App';
+import './EditProductModal.css';
 
 interface ProductEditModalProps {
   isOpen: boolean;
-  onClose: () => void;
   product: Product | null; // The product data to edit
+  onClose: () => void;
   onSave: (updatedProduct: Product) => void; // Callback to save changes
 }
 
-// The 'style' object is no longer needed as styles are moved to CSS
-// const style = {
-//   position: 'absolute' as 'absolute',
-//   top: '50%',
-//   left: '50%',
-//   transform: 'translate(-50%, -50%)',
-//   width: 400,
-//   bgcolor: 'background.paper',
-//   border: '2px solid #000',
-//   boxShadow: 24,
-//   p: 4,
-//   borderRadius: '8px',
-//   fontFamily: 'Inter, sans-serif',
-// };
 
-const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, onClose, product, onSave }) => {
+const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , onClose, onSave }) => {
   // Local state for form fields, initialized from the 'product' prop
   const [editedProduct, setEditedProduct] = useState<Product | null>(null);
 
@@ -112,8 +98,7 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, onClose, pr
           value={editedProduct.name}
           onChange={handleChange}
           required
-          // Removed inline sx for border-radius, handled by CSS
-          sx={{ mb: 2 }} // Keep mb for spacing
+          sx={{ mb: 2 }}
         />
         <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
           <InputLabel id="category-label">Category</InputLabel>
@@ -124,7 +109,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, onClose, pr
             label="Category"
             onChange={handleSelectChange}
             required
-            // Removed inline sx for border-radius, handled by CSS
           >
             {/* You might want to pass available categories as a prop to this modal */}
             <MenuItem value="Electronics">Electronics</MenuItem>
@@ -144,9 +128,8 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, onClose, pr
           variant="outlined"
           value={editedProduct.unitPrice}
           onChange={handleChange}
-          inputProps={{ step: "0.01" }} // Allow decimal input
           required
-          sx={{ mb: 2 }} // Keep mb for spacing
+          sx={{ mb: 2 }}
         />
         <TextField
           margin="dense"
@@ -158,19 +141,17 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, onClose, pr
           value={editedProduct.stockQuantity}
           onChange={handleChange}
           required
-          sx={{ mb: 2 }} // Keep mb for spacing
+          sx={{ mb: 2 }}
         />
         <TextField
           margin="dense"
           name="expirationDate"
-          label="Expiration Date"
           type="date"
           fullWidth
           variant="outlined"
-          InputLabelProps={{ shrink: true }} // Keep label visible for date input
-          value={editedProduct.expirationDate || ''} // Ensure it's empty string if undefined
+          value={editedProduct.expirationDate || ''}
           onChange={handleDateChange}
-          sx={{ mb: 3 }} // Keep mb for spacing
+          sx={{ mb: 3, textAlign: 'shrink' }}
         />
         {/* Apply the CSS class 'modal-buttons-container' */}
         <Box className="modal-buttons-container">
