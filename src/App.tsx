@@ -7,13 +7,12 @@ import CreateProductModal from "./components/CreateProductModal/CreateProductMod
 import "./App.css";
 import axios from "axios";
 import { type GridPaginationModel, type GridRowId } from "@mui/x-data-grid";
-import { Button } from "@mui/material";
 
 export interface Product {
   id?: number;
   name: string;
   category: string;
-  unitPrice: number;
+  unitPrice: any;
   expirationDate?: Date;
   stockQuantity: number;
   creationDate: Date;
@@ -27,12 +26,6 @@ interface ProductPageResponse {
   number: number;
   size: number;
 }
-
-// interface MetricsResponse {
-//   totalStock: number,
-//   totalValue: number,
-//   averageValue: number
-// }
 
 function App() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -74,6 +67,10 @@ function App() {
         `http://localhost:9090/api/products?${params.toString()}`
       );
 
+      response.data.content.forEach(product => {
+        product.unitPrice = "$ " + product.unitPrice;
+      })
+
       setProducts(response.data.content);
       setTotalRowCount(response.data.totalElements);
     
@@ -106,7 +103,7 @@ function App() {
                 category: category,
                 totalStock: totalStock.data,
                 totalValue: totalValue.data,
-                averageValue: averageValue.data
+                averageValue: averageValue.data.toFixed(2)
             };
 
       });
@@ -114,19 +111,25 @@ function App() {
       const metrics = await Promise.all(metricsResponse);
       
       let totalStockOverall = 0; 
-      let totalValueOverall = 0;
+      let totalValueOverall: string | number = 0;
 
       const overallId = metrics.length + 1;
       metrics.forEach(metric => totalStockOverall += metric.totalStock);
-      metrics.map(metric => totalValueOverall += metric.totalValue);
-      const averageValueOverall = await axios.get("http://localhost:9090/api/products/averageValue");
+      metrics.forEach(metric => totalValueOverall += metric.totalValue);
+      metrics.forEach(metric => metric.totalValue = "$ " + metric.totalValue);
+      metrics.forEach(metric => metric.averageValue = "$ " + metric.averageValue);
+
+      let averageValueOverall = await axios.get("http://localhost:9090/api/products/averageValue");
+
+      totalValueOverall = "$ " + totalValueOverall.toFixed(2);
+      const averageValueOverallString: string = "$ " + averageValueOverall.data.toFixed(2);
 
       metrics.push({
         id: overallId,
         category: "Overall",
         totalStock: totalStockOverall,
         totalValue: totalValueOverall,
-        averageValue: averageValueOverall.data
+        averageValue: averageValueOverallString
       })
       setMetrics(metrics);
     }
@@ -154,20 +157,25 @@ function App() {
   }, []);
 
   const markOutOfStock = useCallback(async (id: number) => {
-    const originalProduct = products.find(p => p.id === id);
-    updateProductStockLocally(id, 0);
 
-    try {
-      await axios.post(`http://localhost:9090/api/products/${id}/outofstock`);
-      fetchProducts();
-    } catch (err: any) {
-      console.error("An error occurred when setting product out of stock: ", err);
-      alert(`Failed to mark product ${id} out of stock.`);
-      if (originalProduct) {
-        updateProductStockLocally(id, originalProduct.stockQuantity);
+    if (id) {
+      const originalProduct = products.find(p => p.id === id);
+      updateProductStockLocally(id, 0);
+      try {
+        await axios.post(`http://localhost:9090/api/products/${id}/outofstock`);
+        fetchProducts();
+      } catch (err: any) {
+        console.error("An error occurred when setting product out of stock: ", err);
+        alert(`Failed to mark product ${id} out of stock.`);
+        if (originalProduct) {
+          updateProductStockLocally(id, originalProduct.stockQuantity);
+        }
+        fetchProducts();
       }
-      fetchProducts();
+    } else {
+
     }
+    
   }, [products, updateProductStockLocally, fetchProducts]);
 
   const markInStock = useCallback(async (id: number, quantity: number = 10) => {
@@ -259,19 +267,13 @@ function App() {
   return (
     <div className="app">
 
-      <div>
+      <div style={{display: "flex "}}>
         <SearchComponent
         onFilterChange={handleFilterChange}
         availableCategories={availableCategories}
+        handleCreateButtonClick={handleCreateButtonClick}
         />
-        <Button
-          variant="outlined"
-          onClick={handleCreateButtonClick}
-        >
-          Create new product
-        </Button>
       </div>
-      
       <DataTable
         products={products}
         totalRowCount={totalRowCount}

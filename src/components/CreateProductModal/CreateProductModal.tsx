@@ -11,20 +11,21 @@ interface ProductCreateModalProps {
 }
 
 const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose, onSave, categories }) => {
-  // Local state for form fields, initialized from the 'product' prop
     const [product, setProduct] = useState<Product>({
     name: '',
-    category: '', // Default to first available category or empty
+    category: '',
     unitPrice: 0,
     expirationDate: undefined,
     stockQuantity: 0,
-    creationDate: new Date,
-    updateDate: new Date
+    creationDate: new Date(),
+    updateDate: new Date()
   });
 
-  // Handle input changes for text fields
+  const [addCategoryClicked, setAddCategoryClicked] = useState<boolean>(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log(`${name} field has been set to: ${value}`)
     setProduct(prev => {
       if (name === 'unitPrice' || name === 'stockQuantity') {
         const numValue = parseFloat(value);
@@ -44,20 +45,17 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
     });
   };
 
-  // Handle date input change
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProduct(prev => {
-      // Ensure date is stored as a string in YYYY-MM-DD format if needed by backend
       console.log(`Field ${name} has been set to: ${value}`);
-      return { ...prev, [name]: value || undefined }; // Store undefined if empty
+      return { ...prev, [name]: value || undefined }; 
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (product) {
-      // Basic validation before saving
       if (!product.name || !product.category || product.unitPrice === undefined || product.stockQuantity === undefined) {
         alert('Please fill in all required fields.');
         return;
@@ -66,18 +64,21 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
         alert('Unit price must be greater than 0 and stock quantity cannot be negative.');
         return;
       }
-      onSave(product); // Call the onSave callback from parent
+      onSave(product);
     }
   };
 
   useEffect(() => {
-    console.log("Product on modal:", product)
-  }, [product])
+    return(setAddCategoryClicked(false))
+  }, [])
 
   return (
     <Modal
       open={isOpen}
-      onClose={onClose}
+      onClose={ () => {
+        setAddCategoryClicked(false)
+        onClose();
+      }}
     >
       <Box className="create-modal-box" component="form" onSubmit={handleSubmit}>
         <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
@@ -101,10 +102,32 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
             name="category"
             label="Category"
             onChange={handleSelectChange}
-            required
+            required={addCategoryClicked ? false : true}
           >
             { categories?.map(category => <MenuItem value={category}>{category}</MenuItem>) }
           </Select>
+          { !addCategoryClicked &&  
+            <Button 
+              variant='outlined'
+              className='modal-button-addCategory'
+              onClick={() => setAddCategoryClicked(true)}
+              sx={{ mt: 2 }}
+            >
+              Add new category
+            </Button>
+          }
+
+          {
+            addCategoryClicked && 
+            <TextField 
+            name="category"
+            label="Add new category"
+            onChange={handleChange}
+            required
+            sx={{ mt: 2 }}
+            />
+          }
+         
         </FormControl>
         <TextField
           margin="dense"
@@ -139,43 +162,22 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
           InputLabelProps={{shrink: true}}
           sx={{ mb: 3, textAlign: 'shrink' }}
         />
-
-        <TextField
-          margin="dense"
-          name="creationDate"
-          label="Creation date"
-          type="date"
-          fullWidth
-          variant="outlined"
-          onChange={handleDateChange}
-          InputLabelProps={{shrink: true}}
-          sx={{ mb: 3, textAlign: 'shrink' }}
-        />
-
-        <TextField
-          margin="dense"
-          name="updateDate"
-          label="Update date"
-          type="date"
-          fullWidth
-          variant="outlined"
-          onChange={handleDateChange}
-          InputLabelProps={{shrink: true}}
-          sx={{ mb: 3, textAlign: 'shrink' }}
-        />
-
         <Box className="modal-buttons-container">
           <Button
             variant="outlined"
-            onClick={onClose}
-            className="modal-button-cancel" // Apply the CSS class for cancel button
+            onClick={() => {
+              setAddCategoryClicked(false);
+              onClose();
+              }
+            }
+            className="modal-button-cancel"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
-            className="modal-button-save" // Apply the CSS class for save button
+            className="modal-button-save"
           >
             Save Changes
           </Button>
