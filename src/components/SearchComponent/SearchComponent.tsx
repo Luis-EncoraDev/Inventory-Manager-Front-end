@@ -9,7 +9,6 @@ interface SearchComponentProps {
 }
 
 const SearchComponent: React.FC<SearchComponentProps> = ({ onFilterChange, availableCategories, handleCreateButtonClick }) => {
-  // Local state to manage input values before applying filters
   const [nameInput, setNameInput] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string>('All');

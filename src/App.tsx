@@ -103,7 +103,7 @@ function App() {
                 category: category,
                 totalStock: totalStock.data,
                 totalValue: totalValue.data,
-                averageValue: averageValue.data
+                averageValue: averageValue.data.toFixed(2)
             };
 
       });
@@ -111,7 +111,7 @@ function App() {
       const metrics = await Promise.all(metricsResponse);
       
       let totalStockOverall = 0; 
-      let totalValueOverall: any = 0;
+      let totalValueOverall: string | number = 0;
 
       const overallId = metrics.length + 1;
       metrics.forEach(metric => totalStockOverall += metric.totalStock);
@@ -119,17 +119,17 @@ function App() {
       metrics.forEach(metric => metric.totalValue = "$ " + metric.totalValue);
       metrics.forEach(metric => metric.averageValue = "$ " + metric.averageValue);
 
-      let averageValueOverall: any = await axios.get("http://localhost:9090/api/products/averageValue");
+      let averageValueOverall = await axios.get("http://localhost:9090/api/products/averageValue");
 
-      totalValueOverall = "$ " + totalValueOverall;
-      averageValueOverall.data = "$ " + averageValueOverall.data;
+      totalValueOverall = "$ " + totalValueOverall.toFixed(2);
+      const averageValueOverallString: string = "$ " + averageValueOverall.data.toFixed(2);
 
       metrics.push({
         id: overallId,
         category: "Overall",
         totalStock: totalStockOverall,
         totalValue: totalValueOverall,
-        averageValue: averageValueOverall.data
+        averageValue: averageValueOverallString
       })
       setMetrics(metrics);
     }
