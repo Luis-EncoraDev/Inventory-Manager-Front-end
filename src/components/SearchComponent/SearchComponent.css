@@ -8,6 +8,10 @@
     padding: 2rem;
     font-family: monospace;
     margin-top: 2rem;
+    border-radius: 8px;
+    border-top-width: 1px;
+    border-color: black;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;;
 }
 
 .categoryContainer {

@@ -113,7 +113,7 @@ const DataTable: React.FC<DataTableProps> = ({
   ];
 
   return (
-    <Box sx={{height: 'auto', width: '55 %'}}>
+    <div className='dataGrid-container'>
       <DataGrid
         rows={products}
         columns={columns}
@@ -124,7 +124,7 @@ const DataTable: React.FC<DataTableProps> = ({
         onPaginationModelChange={setPaginationModel}
         getRowClassName={getRowClassName}
       />
-    </Box>
+    </div>
   );
 }
 
