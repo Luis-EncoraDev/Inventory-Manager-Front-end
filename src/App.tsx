@@ -6,7 +6,7 @@ import MetricsTable from "./components/MetricsTable/MetricsTable.tsx";
 import CreateProductModal from "./components/CreateProductModal/CreateProductModal.tsx";
 import "./App.css";
 import axios from "axios";
-import { type GridPaginationModel, type GridRowId } from "@mui/x-data-grid";
+import { type GridPaginationModel, type GridRowId, type GridSortModel } from "@mui/x-data-grid";
 
 export interface Product {
   id?: number;
@@ -35,6 +35,7 @@ function App() {
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterAvailability, setFilterAvailability] = useState<string>("All");
   const [uniqueCategories, setUniqueCategories] = useState<string[]>();
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -63,6 +64,11 @@ function App() {
         params.append("inStock", (filterAvailability === "In stock").toString());
       }
 
+      if (sortModel.length > 0) {
+        const sortItem = sortModel[0];
+        params.append("sort", `${sortItem.field},${sortItem.sort}`);
+      }
+
       const response = await axios.get<ProductPageResponse>(
         `http://localhost:9090/api/products?${params.toString()}`
       );
@@ -87,7 +93,7 @@ function App() {
       setTotalRowCount(0);
       alert("Failed to fetch products. Please try again.");
     }
-  }, [filterName, filterCategory, filterAvailability, paginationModel]);
+  }, [filterName, filterCategory, filterAvailability, paginationModel, sortModel]); // Add sortModel to dependencies
 
   const fetchMetrics = useCallback(async (categories: string[]) => {
     try {
@@ -142,7 +148,10 @@ function App() {
       categories: string[],
       availability: string
     ) => {
+      // Reset pagination to page 0 when filters change
       setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      // Reset sorting when filters change to avoid unexpected behavior
+      setSortModel([]);
       setFilterName(name);
       setFilterCategory(categories);
       setFilterAvailability(availability);
@@ -157,25 +166,24 @@ function App() {
   }, []);
 
   const markOutOfStock = useCallback(async (id: number) => {
-
     if (id) {
       const originalProduct = products.find(p => p.id === id);
-      updateProductStockLocally(id, 0);
+      updateProductStockLocally(id, 0); // Optimistic UI update
       try {
         await axios.post(`http://localhost:9090/api/products/${id}/outofstock`);
-        fetchProducts();
+        fetchProducts(); // Re-fetch to ensure consistency with backend
       } catch (err: any) {
         console.error("An error occurred when setting product out of stock: ", err);
         alert(`Failed to mark product ${id} out of stock.`);
+        // Revert optimistic update if API call fails
         if (originalProduct) {
           updateProductStockLocally(id, originalProduct.stockQuantity);
         }
-        fetchProducts();
+        fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
       }
     } else {
-
+      // Handle case where ID is undefined if necessary
     }
-    
   }, [products, updateProductStockLocally, fetchProducts]);
 
   const markInStock = useCallback(async (id: number, quantity: number = 10) => {
@@ -183,7 +191,6 @@ function App() {
     updateProductStockLocally(id, quantity); // Optimistic UI update
 
     try {
-      // Corrected: Use axios.put to match Spring Boot @PutMapping
       await axios.put(`http://localhost:9090/api/products/${id}/instock?quantity=${quantity}`);
       fetchProducts(); // Re-fetch to ensure consistency
     } catch (err: any) {
@@ -213,6 +220,7 @@ function App() {
 
 
   const handleDeleteButtonClick = useCallback(async (id: GridRowId) => {
+    // Replace window.confirm with a custom modal/dialog for better UX
     if (!window.confirm(`Are you sure you want to delete product with ID: ${id}?`)) {
       return;
     }
@@ -246,7 +254,7 @@ function App() {
       console.error("An error occurred when creating product", err);
       alert("Failed to create product!");
     };
-  }, [])
+  }, [fetchProducts, handleCloseCreateModal]) // Added dependencies
 
   const handleSaveEditedProduct = useCallback(async (updatedProduct: Product) => {
     try {
@@ -260,13 +268,14 @@ function App() {
       alert(`Failed to update product ${updatedProduct.name}.`);
     }
   }, [fetchProducts, handleCloseEditModal]);
+
+  // Effect to fetch products whenever pagination model, sort model, or filters change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   return (
     <div className="app">
-
       <div style={{display: "flex "}}>
         <SearchComponent
         onFilterChange={handleFilterChange}
@@ -279,6 +288,8 @@ function App() {
         totalRowCount={totalRowCount}
         paginationModel={paginationModel}
         setPaginationModel={setPaginationModel}
+        sortModel={sortModel} // Pass the sortModel state
+        setSortModel={setSortModel} // Pass the setSortModel function
         onMarkInStock={markInStock}
         onMarkOutOfStock={markOutOfStock}
         handleEditButtonClick={handleEditButtonClick}

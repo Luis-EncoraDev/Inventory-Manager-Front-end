@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import "../DataTable/DataTable.css";
-import { DataGrid, type GridColDef, type GridRenderCellParams, type GridPaginationModel, type GridRowId } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef, type GridRenderCellParams, type GridPaginationModel, type GridRowId, type GridSortModel } from '@mui/x-data-grid';
 import { Box, Checkbox } from '@mui/material';
 
 interface DataTableProps {
@@ -8,6 +8,8 @@ interface DataTableProps {
   totalRowCount: number;
   paginationModel: GridPaginationModel;
   setPaginationModel: React.Dispatch<React.SetStateAction<GridPaginationModel>>;
+  sortModel: GridSortModel;
+  setSortModel: React.Dispatch<React.SetStateAction<GridSortModel>>;
   onMarkOutOfStock: (id: number) => Promise<void>;
   onMarkInStock: (id: number) => Promise<void>;
   handleEditButtonClick: (id: GridRowId) => Promise<void>;
@@ -30,6 +32,8 @@ const DataTable: React.FC<DataTableProps> = ({
   totalRowCount,
   paginationModel,
   setPaginationModel,
+  sortModel,
+  setSortModel,
   onMarkOutOfStock,
   onMarkInStock,
   handleEditButtonClick,
@@ -45,6 +49,7 @@ const DataTable: React.FC<DataTableProps> = ({
     let classes = '';
 
     if (!params.row.expirationDate) {
+      // No expiration date, no special class
     } else if (expirationDate.getTime() - today.getTime() < oneWeek) {
       classes += 'expired-soon';
     } else if (expirationDate.getTime() - today.getTime() < twoWeeks) {
@@ -122,6 +127,9 @@ const DataTable: React.FC<DataTableProps> = ({
         paginationModel={paginationModel}
         paginationMode="server"
         onPaginationModelChange={setPaginationModel}
+        sortingMode="server"
+        sortModel={sortModel}
+        onSortModelChange={setSortModel}
         getRowClassName={getRowClassName}
       />
     </div>
