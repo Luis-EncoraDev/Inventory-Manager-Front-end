@@ -11,7 +11,6 @@ interface ProductEditModalProps {
   categories: string[] | undefined
 }
 
-
 const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , onClose, onSave, categories }) => {
   const [editedProduct, setEditedProduct] = useState<Product | null>(null);
   const [addCategoryClicked, setAddCategoryClicked] = useState<boolean>(false);
@@ -55,7 +54,6 @@ const EditProductModal: React.FC<ProductEditModalProps> = ({ isOpen, product , o
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editedProduct) {
-      // Basic validation before saving
       if (!editedProduct.name || !editedProduct.category || editedProduct.unitPrice === undefined || editedProduct.stockQuantity === undefined) {
         alert('Please fill in all required fields.');
         return;

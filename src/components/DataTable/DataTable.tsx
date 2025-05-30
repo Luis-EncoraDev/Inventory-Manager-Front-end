@@ -49,7 +49,6 @@ const DataTable: React.FC<DataTableProps> = ({
     let classes = '';
 
     if (!params.row.expirationDate) {
-      // No expiration date, no special class
     } else if (expirationDate.getTime() - today.getTime() < oneWeek) {
       classes += 'expired-soon';
     } else if (expirationDate.getTime() - today.getTime() < twoWeeks) {

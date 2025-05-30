@@ -181,8 +181,6 @@ function App() {
         }
         fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
       }
-    } else {
-      // Handle case where ID is undefined if necessary
     }
   }, [products, updateProductStockLocally, fetchProducts]);
 
@@ -200,7 +198,7 @@ function App() {
       if (originalProduct) {
         updateProductStockLocally(id, originalProduct.stockQuantity);
       }
-      fetchProducts(); // Re-fetch to revert UI if API failed or for general consistency
+      fetchProducts();
     }
   }, [products, updateProductStockLocally, fetchProducts]);
 
@@ -211,6 +209,7 @@ function App() {
   const handleEditButtonClick = useCallback(async (id: GridRowId) => {
     const productToEdit = products.find(p => p.id === id);
     if (productToEdit) {
+      productToEdit.unitPrice = Number(productToEdit.unitPrice.slice(2))
       setEditingProduct(productToEdit); 
       setIsEditModalOpen(true); 
     } else {
@@ -218,9 +217,7 @@ function App() {
     }
   }, [products]);
 
-
   const handleDeleteButtonClick = useCallback(async (id: GridRowId) => {
-    // Replace window.confirm with a custom modal/dialog for better UX
     if (!window.confirm(`Are you sure you want to delete product with ID: ${id}?`)) {
       return;
     }
@@ -245,7 +242,6 @@ function App() {
 
   const handleSaveNewProduct = useCallback(async (product: Product) => {
     try {
-      console.log("New product: ", product);
       await axios.post("http://localhost:9090/api/products", product);
       alert(`${product.name} product was successfully created`);
       fetchProducts();
@@ -254,11 +250,10 @@ function App() {
       console.error("An error occurred when creating product", err);
       alert("Failed to create product!");
     };
-  }, [fetchProducts, handleCloseCreateModal]) // Added dependencies
+  }, [fetchProducts, handleCloseCreateModal])
 
   const handleSaveEditedProduct = useCallback(async (updatedProduct: Product) => {
     try {
-      console.log("Edited product:", updatedProduct);
       await axios.put(`http://localhost:9090/api/products/${updatedProduct.id}`, updatedProduct);
       alert(`Product ${updatedProduct.name} updated successfully!`);
       fetchProducts();
@@ -269,7 +264,6 @@ function App() {
     }
   }, [fetchProducts, handleCloseEditModal]);
 
-  // Effect to fetch products whenever pagination model, sort model, or filters change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
@@ -288,8 +282,8 @@ function App() {
         totalRowCount={totalRowCount}
         paginationModel={paginationModel}
         setPaginationModel={setPaginationModel}
-        sortModel={sortModel} // Pass the sortModel state
-        setSortModel={setSortModel} // Pass the setSortModel function
+        sortModel={sortModel}
+        setSortModel={setSortModel}
         onMarkInStock={markInStock}
         onMarkOutOfStock={markOutOfStock}
         handleEditButtonClick={handleEditButtonClick}

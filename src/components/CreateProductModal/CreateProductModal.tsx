@@ -25,14 +25,11 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    console.log(`${name} field has been set to: ${value}`)
     setProduct(prev => {
       if (name === 'unitPrice' || name === 'stockQuantity') {
         const numValue = parseFloat(value);
-        console.log(`Field ${name} has been set to: ${value}`);
         return { ...prev, [name]: isNaN(numValue) ? undefined : numValue };
       }
-      console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value };
     });
   };
@@ -40,7 +37,6 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
   const handleSelectChange = (e: any) => {
     const { name, value } = e.target;
     setProduct(prev => {
-    console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value };
     });
   };
@@ -48,7 +44,6 @@ const CreateProductModal: React.FC<ProductCreateModalProps> = ({ isOpen, onClose
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProduct(prev => {
-      console.log(`Field ${name} has been set to: ${value}`);
       return { ...prev, [name]: value || undefined }; 
     });
   };
